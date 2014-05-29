@@ -1,7 +1,11 @@
+def noop(*a, **b):
+  pass
+
 class InvalidTransition(Exception):
   pass
 
 class Transition:
+
   def __init__(self, from_state='', to_state='', listeners=[]):
     self.from_state = from_state
     self.to_state = to_state
@@ -15,21 +19,19 @@ class Transition:
       listener(data)
 
 class StateMachine:
-  def __init__(self, transition_handler=None, transitions=[]):
+
+  def __init__(self, no_transition=noop, transitions=[]):
+    self.no_transition = no_transition
     self.transitions = transitions
-    self.transition_handler = transition_handler
 
   def transition(self, data):
     def apply(from_state, to_state):
       transition = next((t for t in self.transitions if t.accepts(from_state, to_state)), None)
 
       if transition:
-        if self.transition_handler:
-          self.transition_handler(data, transition)
-
         transition.notify_listeners(data)
         return transition
 
-      raise InvalidTransition('%s -> %s' % (from_state, to_state))
+      self.no_transition(from_state, to_state)
 
     return apply

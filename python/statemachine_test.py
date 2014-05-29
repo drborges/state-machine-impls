@@ -16,15 +16,6 @@ class TestStateMachine(unittest.TestCase):
 
     expect(transition).to.be.equal(transition_a_b)
 
-  def test_it_handles_transition_through_callback(self):
-    transition_handler = Mock()
-    statemachine = StateMachine(transition_handler, transitions=[Transition('A', 'B')])
-
-    data = 'some data'
-    transition = statemachine.transition(data)(from_state='A', to_state='B')
-
-    transition_handler.assert_called_with(data, transition)
-
   def test_it_allows_for_lazy_execution(self):
     transition_a_b = Transition(from_state='A', to_state='B')
     statemachine = StateMachine(transitions=[transition_a_b])
@@ -34,7 +25,7 @@ class TestStateMachine(unittest.TestCase):
 
     expect(transition).to.be.equal(transition_a_b)
 
-  def test_it_notify_listeners(self):
+  def test_it_notifies_listeners(self):
     listener1 = Mock()
     listener2 = Mock()
 
@@ -44,11 +35,19 @@ class TestStateMachine(unittest.TestCase):
     ])
 
     data = { 'data': 'some data' }
-    transition = statemachine.transition(data)(from_state='A', to_state='C')
+    statemachine.transition(data)(from_state='A', to_state='C')
 
     listener1.assert_called_with(data)
     listener2.assert_called_with(data)
 
-  @raises(InvalidTransition)
-  def test_it_raises_exception_when_transition_is_invalid(self):
-    StateMachine([Transition('A', 'B')]).transition({})('A', 'C')
+  def test_it_calls_no_transition_handler_when_transition_is_invalid(self):
+    handler = Mock()
+
+    StateMachine(no_transition=handler).transition({})('A', 'C')
+
+    handler.assert_called_with('A', 'C')
+
+  def test_it_returns_none_when_transition_is_invalid(self):
+    transition = StateMachine().transition({})('A', 'C')
+
+    expect(transition).to.be.none
